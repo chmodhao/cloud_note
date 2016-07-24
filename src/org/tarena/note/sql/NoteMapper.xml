@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN"      
+ "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+<mapper namespace="org.tarena.note.dao.NoteDao">
+	<!-- 动态SQL，不定条件查询 -->
+	<select id="find" parameterType="org.tarena.note.entity.Note"
+		resultType="org.tarena.note.entity.Note">
+		select * from cn_note
+		<where><!-- 可以自动添加where字段也可以去除and/or字段 -->
+			<if test="cn_note_id != null">
+				cn_note_id=#{cn_note_id}
+			</if>
+			<if test="cn_notebook_id != null">
+				and cn_notebook_id=#{cn_notebook_id}
+			</if>
+			<if test="cn_user_id != null">
+				and cn_user_id=#{cn_user_id}
+			</if>
+			<if test="cn_note_status_id != null">
+				and cn_note_status_id=#{cn_note_status_id}
+			</if>
+			<if test="cn_note_type_id != null">
+				and cn_note_type_id=#{cn_note_type_id}
+			</if>
+			<if test="cn_note_title != null">
+				and cn_note_title=#{cn_note_title}
+			</if>
+			<if test="cn_note_body != null">
+				and cn_note_body=#{cn_note_body}
+			</if>
+			<if test="cn_note_create_time != null">
+				and cn_note_create_time=#{cn_note_create_time}
+			</if>
+			<if test="cn_note_last_modify_time != null">
+				and cn_note_last_modify_time=#{cn_note_last_modify_time}
+			</if>
+		</where>
+		order by cn_note_last_modify_time desc
+	</select>
+
+	<!-- 动态更新，参数属性不为null就更新 -->
+	<update id="update" parameterType="org.tarena.note.entity.Note">
+		update cn_note
+		<set>
+			<if test="cn_notebook_id != null">
+				cn_notebook_id=#{cn_notebook_id},
+			</if>
+			<if test="cn_user_id != null">
+				cn_user_id=#{cn_user_id},
+			</if>
+			<if test="cn_note_status_id != null">
+				cn_note_status_id=#{cn_note_status_id},
+			</if>
+			<if test="cn_note_type_id != null">
+				cn_note_type_id=#{cn_note_type_id},
+			</if>
+			<if test="cn_note_title != null">
+				cn_note_title=#{cn_note_title},
+			</if>
+			<if test="cn_note_body != null">
+				cn_note_body=#{cn_note_body},
+			</if>
+			<if test="cn_note_create_time != null">
+				cn_note_create_time=#{cn_note_create_time},
+			</if>
+			<if test="cn_note_last_modify_time != null">
+				cn_note_last_modify_time=#{cn_note_last_modify_time},
+			</if>
+		</set>
+		where cn_note_id=#{cn_note_id}
+	</update>
+	<!-- 批量删除，使用foreach生成in条件 -->
+	<delete id="delete">
+		delete from cn_note where cn_note_id in
+		<foreach collection="array" item="id" separator="," open="("
+			close=")">
+			<!-- array代表参数是数组 -->
+			#{id}
+		</foreach>
+	</delete>
+
+	<!-- 关联查询 -->
+	<!-- 主对象一起加载 -->
+	<select id="find1" resultMap="noteMap1">
+		select * from cn_note note join
+		cn_notebook book on(note.cn_notebook_id=book.cn_notebook_id)
+	</select>
+	<!-- 自定义映射关系 -->
+	<resultMap id="noteMap1" type="org.tarena.note.entity.Note">
+		<id property="cn_note_id" column="cn_note_id" />
+		<result property="cn_notebook_id" column="cn_notebook_id" />
+		<result property="cn_user_id" column="cn_user_id" />
+		<result property="cn_note_status_id" column="cn_note_status_id" />
+		<result property="cn_note_type_id" column="cn_note_type_id" />
+		<result property="cn_note_title" column="cn_note_title" />
+		<result property="cn_note_body" column="cn_note_body" />
+		<result property="cn_note_create_time" column="cn_note_create_time" />
+		<result property="cn_note_last_modify_time" column="cn_note_last_modify_time" />
+		<!-- 其他属性省略 -->
+		<!-- 关联属性book装载 -->
+		<association property="book" javaType="org.tarena.note.entity.NoteBook"><!-- 对象关联 -->
+			<id property="cn_notebook_id" column="cn_notebook_id" />
+			<result property="cn_user_id" column="cn_user_id" />
+			<result property="cn_notebook_type_id" column="cn_notebook_type_id" />
+			<result property="cn_notebook_name" column="cn_notebook_name" />
+			<result property="cn_notebook_desc" column="cn_notebook_desc" />
+			<result property="cn_notebook_createtime" column="cn_notebook_createtime" />
+			<!-- 其他属性省略 -->
+		</association>
+	</resultMap>
+	<!-- 单独的SQL加载 -->
+	<select id="find2" resultMap="noteMap2">
+		select * from cn_note
+	</select>
+	<resultMap type="org.tarena.note.entity.Note" id="noteMap2">
+		<association property="book" javaType="org.tarena.note.entity.NoteBook"
+			column="cn_notebook_id" select="load"><!-- column是下一级SQL的条件 -->
+		</association>
+	</resultMap>
+	<select id="load" parameterType="string"
+		resultType="org.tarena.note.entity.NoteBook">
+		select * from cn_notebook where
+		cn_notebook_id=#{cn_notebook_id};
+	</select>
+
+
+
+	<!-- public User findByUserId(String name) -->
+	<select id="findByNotebookId" parameterType="string"
+		resultType="org.tarena.note.entity.Note">
+		select cn_note_id,cn_note_title from cn_note
+		where
+		cn_notebook_id=#{notebookId} and cn_note_status_id='1'
+		order by
+		cn_note_last_modify_time desc
+	</select>
+	<insert id="addNoteByNoteBookId" parameterType="org.tarena.note.entity.Note">
+		insert into
+		cn_note(
+		cn_note_id,cn_notebook_id,cn_user_id,cn_note_status_id,cn_note_type_id,cn_note_title,cn_note_body,cn_note_create_time,cn_note_last_modify_time)
+		values(
+		#{cn_note_id},#{cn_notebook_id},#{cn_user_id},#{cn_note_status_id},#{cn_note_type_id},#{cn_note_title},#{cn_note_body},#{cn_note_create_time},#{cn_note_last_modify_time}
+		)
+	</insert>
+	<select id="findByBookIdAndUserIdAndNoteTitle" parameterType="org.tarena.note.entity.Note"
+		resultType="int">
+		select count(*) from cn_note
+		where
+		cn_user_id=#{cn_user_id}
+		and cn_notebook_id=#{cn_notebook_id} and
+		cn_note_title=#{cn_note_title}
+	</select>
+	<select id="findByNoteId" parameterType="string"
+		resultType="org.tarena.note.entity.Note">
+		select * from cn_note
+		where cn_note_id=#{noteId}
+	</select>
+	<update id="saveNote" parameterType="org.tarena.note.entity.Note"><!-- 不能返回值 -->
+		update cn_note
+		set
+		cn_note_body=#{cn_note_body},
+		cn_note_title=#{cn_note_title},
+		cn_note_last_modify_time=#{cn_note_last_modify_time}
+		where
+		cn_note_id=#{cn_note_id}
+	</update>
+
+	<update id="abandonNoteByNoteId" parameterType="org.tarena.note.entity.Note">
+		update cn_note
+		set cn_note_status_id=#{cn_note_status_id} where
+		cn_note_id=#{cn_note_id}
+	</update>
+	<select id="queryCountByBookId" parameterType="string"
+		resultType="int">
+		select count(*) from cn_note where cn_notebook_id=#{bookId}
+		and
+		cn_note_status_id=1
+	</select>
+	<delete id="deleteByBookId" parameterType="string">
+		delete from cn_note
+		where
+		cn_notebook_id=#{bookId}
+	</delete>
+</mapper>
+
